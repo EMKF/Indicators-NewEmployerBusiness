@@ -2,9 +2,9 @@ import os
 import shutil
 import joblib
 import pandas as pd
-from tools import constants as c
+import constants as c
 from scipy.stats.mstats import gmean
-from kauffman.data import bfs, bds, pep
+from kauffman.data_fetch import bfs, bds, pep
 
 
 def _format_csv(df):
@@ -37,7 +37,7 @@ def _fetch_data_bfs_march_shift(region, fetch_data):
 def _fetch_data_bds(region, fetch_data):
     if fetch_data:
         print(f'\tcreating dataset neb/data/temp/bds_{region}.pkl')
-        df = bds(['FIRM'], obs_level=region).\
+        df = bds(['FIRM'], geo_level=region).\
             rename(columns={'FIRM': 'firms'})
     else:
         df = pd.read_csv(c.filenamer(f'data/raw_data/bds_{region}.csv')). \
@@ -235,7 +235,7 @@ def neb_data_create_all(raw_data_fetch, raw_data_remove, aws_filepath=None):
 
 if __name__ == '__main__':
     neb_data_create_all(
-        raw_data_fetch=True,
+        raw_data_fetch=False,
         raw_data_remove=True
         #aws_filepath='s3://emkf.data.research/indicators/neb/data_outputs'
     )

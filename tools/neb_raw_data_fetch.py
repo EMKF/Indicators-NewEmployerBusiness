@@ -1,10 +1,8 @@
-import sys
-import boto3
 import joblib
 import pandas as pd
 import constants as c
 from kauffman.tools import file_to_s3
-from kauffman.data import bfs, pep, bds
+from kauffman.data_fetch import bfs, pep, bds
 
 
 def raw_data_update():
@@ -24,7 +22,7 @@ def raw_data_update():
             astype({'time': 'int', 'population': 'int'}).\
             to_csv(c.filenamer(f'data/raw_data/pep_{region}.csv'), index=False)
 
-        bds(['FIRM'], obs_level=region). \
+        bds(['FIRM'], geo_level=region). \
             rename(columns={'FIRM': 'firms'}).\
             to_csv(c.filenamer(f'data/raw_data/bds_{region}.csv'), index=False)
 
@@ -41,7 +39,7 @@ def s3_update():
 
 def main():
     raw_data_update()
-    s3_update()
+    # s3_update()
 
 
 if __name__ == '__main__':
