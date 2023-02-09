@@ -11,28 +11,34 @@ def raw_data_update():
         c.filenamer('data/raw_data/raw_data_fetch_time.pkl')
     )
 
-    for region in ['us', 'state']:
-        bfs(['BA_BA', 'BF_SBF8Q', 'BF_DUR8Q'], region, annualize=True) \
+    for geo_level in ['us', 'state']:
+        bfs(['BA_BA', 'BF_SBF8Q', 'BF_DUR8Q'], geo_level, annualize=True) \
             .rename(columns={
                 'BF_DUR8Q': 'avg_speed_annual', 'BF_SBF8Q': 'bf', 'BA_BA': 'ba'
             }) \
-            .to_csv(c.filenamer(f'data/raw_data/bfs_{region}.csv'), index=False)
+            .to_csv(
+                c.filenamer(f'data/raw_data/bfs_{geo_level}.csv'), index=False
+            )
 
-        bfs(['BF_SBF8Q'], region, march_shift=True) \
+        bfs(['BF_SBF8Q'], geo_level, march_shift=True) \
             .rename(columns={'BF_SBF8Q': 'bf_march_shift'}) \
             .to_csv(
-                c.filenamer(f'data/raw_data/bfs_march_{region}.csv'), 
+                c.filenamer(f'data/raw_data/bfs_march_{geo_level}.csv'), 
                 index=False
             )
 
-        pep(region) \
+        pep(geo_level) \
             .rename(columns={'POP': 'population'}) \
             .astype({'time': 'int', 'population': 'int'}) \
-            .to_csv(c.filenamer(f'data/raw_data/pep_{region}.csv'), index=False)
+            .to_csv(
+                c.filenamer(f'data/raw_data/pep_{geo_level}.csv'), index=False
+            )
 
-        bds(['FIRM'], geo_level=region) \
+        bds(['FIRM'], geo_level=geo_level) \
             .rename(columns={'FIRM': 'firms'}) \
-            .to_csv(c.filenamer(f'data/raw_data/bds_{region}.csv'), index=False)
+            .to_csv(
+                c.filenamer(f'data/raw_data/bds_{geo_level}.csv'), index=False
+            )
 
 
 def s3_update():

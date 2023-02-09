@@ -12,53 +12,53 @@ def _format_csv(df):
         .astype({'fips': 'str', 'time': 'int'})
 
 
-def _fetch_data_bfs(region, fetch_data):
+def _fetch_data_bfs(geo_level, fetch_data):
     if fetch_data:
-        print(f'\tcreating datasets neb/data/temp/bfs_{region}.pkl')
-        df = bfs(['BA_BA', 'BF_SBF8Q', 'BF_DUR8Q'], region, annualize=True) \
+        print(f'\tcreating datasets neb/data/temp/bfs_{geo_level}.pkl')
+        df = bfs(['BA_BA', 'BF_SBF8Q', 'BF_DUR8Q'], geo_level, annualize=True) \
             .rename(columns={
                 'BF_DUR8Q': 'avg_speed_annual', 'BF_SBF8Q': 'bf', 'BA_BA': 'ba'
             })
     else:
-        df = pd.read_csv(c.filenamer(f'data/raw_data/bfs_{region}.csv')) \
+        df = pd.read_csv(c.filenamer(f'data/raw_data/bfs_{geo_level}.csv')) \
             .pipe(_format_csv)
-    joblib.dump(df, c.filenamer(f'data/temp/bfs_{region}.pkl'))
+    joblib.dump(df, c.filenamer(f'data/temp/bfs_{geo_level}.pkl'))
 
 
-def _fetch_data_bfs_march_shift(region, fetch_data):
+def _fetch_data_bfs_march_shift(geo_level, fetch_data):
     if fetch_data:
-        print(f'\tcreating datasets neb/data/temp/bfs_march_{region}.pkl')
-        df = bfs(['BF_SBF8Q'], region, march_shift=True) \
+        print(f'\tcreating datasets neb/data/temp/bfs_march_{geo_level}.pkl')
+        df = bfs(['BF_SBF8Q'], geo_level, march_shift=True) \
             .rename(columns={'BF_SBF8Q': 'bf_march_shift'})
     else:
         df = pd.read_csv(
-                c.filenamer(f'data/raw_data/bfs_march_{region}.csv')
+                c.filenamer(f'data/raw_data/bfs_march_{geo_level}.csv')
             ) \
             .pipe(_format_csv)
-    joblib.dump(df, c.filenamer(f'data/temp/bfs_march_{region}.pkl'))
+    joblib.dump(df, c.filenamer(f'data/temp/bfs_march_{geo_level}.pkl'))
 
 
-def _fetch_data_bds(region, fetch_data):
+def _fetch_data_bds(geo_level, fetch_data):
     if fetch_data:
-        print(f'\tcreating dataset neb/data/temp/bds_{region}.pkl')
-        df = bds(['FIRM'], geo_level=region) \
+        print(f'\tcreating dataset neb/data/temp/bds_{geo_level}.pkl')
+        df = bds(['FIRM'], geo_level=geo_level) \
             .rename(columns={'FIRM': 'firms'})
     else:
-        df = pd.read_csv(c.filenamer(f'data/raw_data/bds_{region}.csv')) \
+        df = pd.read_csv(c.filenamer(f'data/raw_data/bds_{geo_level}.csv')) \
             .pipe(_format_csv)
-    joblib.dump(df, c.filenamer(f'data/temp/bds_{region}.pkl'))
+    joblib.dump(df, c.filenamer(f'data/temp/bds_{geo_level}.pkl'))
 
 
-def _fetch_data_pep(region, fetch_data):
+def _fetch_data_pep(geo_level, fetch_data):
     if fetch_data:
-        print(f'\tcreating dataset neb/data/temp/pep_{region}.pkl')
-        df = pep(region) \
+        print(f'\tcreating dataset neb/data/temp/pep_{geo_level}.pkl')
+        df = pep(geo_level) \
             .rename(columns={'POP': 'population'}) \
             .astype({'time': 'int', 'population': 'int'})
     else:
-        df = pd.read_csv(c.filenamer(f'data/raw_data/pep_{region}.csv')) \
+        df = pd.read_csv(c.filenamer(f'data/raw_data/pep_{geo_level}.csv')) \
             .pipe(_format_csv)
-    joblib.dump(df, c.filenamer(f'data/temp/pep_{region}.pkl'))
+    joblib.dump(df, c.filenamer(f'data/temp/pep_{geo_level}.pkl'))
 
 
 def _raw_data_fetch(fetch_data):
@@ -66,29 +66,29 @@ def _raw_data_fetch(fetch_data):
         _raw_data_remove(remove_data=True)
     os.mkdir(c.filenamer('data/temp'))
 
-    for region in ['us', 'state']:
-        _fetch_data_bfs(region, fetch_data)
-        _fetch_data_bfs_march_shift(region, fetch_data)
-        _fetch_data_bds(region, fetch_data)
-        _fetch_data_pep(region, fetch_data)
+    for geo_level in ['us', 'state']:
+        _fetch_data_bfs(geo_level, fetch_data)
+        _fetch_data_bfs_march_shift(geo_level, fetch_data)
+        _fetch_data_bds(geo_level, fetch_data)
+        _fetch_data_pep(geo_level, fetch_data)
 
 
-def _raw_data_merge(region):
-    return joblib.load(c.filenamer(f'data/temp/bfs_{region}.pkl')) \
+def _raw_data_merge(geo_level):
+    return joblib.load(c.filenamer(f'data/temp/bfs_{geo_level}.pkl')) \
         .merge(
-            joblib.load(c.filenamer(f'data/temp/pep_{region}.pkl')) \
+            joblib.load(c.filenamer(f'data/temp/pep_{geo_level}.pkl')) \
                 .drop(columns='region'), 
             how='left', 
             on=['fips', 'time']
         ) \
         .merge(
-            joblib.load(c.filenamer(f'data/temp/bds_{region}.pkl')) \
+            joblib.load(c.filenamer(f'data/temp/bds_{geo_level}.pkl')) \
                 .drop(columns='region'),
             how='left', 
             on=['fips', 'time']
         ) \
         .merge(
-            joblib.load(c.filenamer(f'data/temp/bfs_march_{region}.pkl')) \
+            joblib.load(c.filenamer(f'data/temp/bfs_march_{geo_level}.pkl')) \
                 .drop(columns='region'), 
             how='left', 
             on=['fips', 'time']
@@ -119,10 +119,10 @@ def _aggregator(df, index_vars):
     return df
 
 
-def index(df, region):
+def index(df, geo_level):
     reference_year = 2017  # minimum of last year of velocity or actualization
 
-    if region == 'state':
+    if geo_level == 'state':
         df \
             .query(f'time <= {reference_year}') \
             .pipe(joblib.dump, c.filenamer('data/temp/df_ref.pkl'))
@@ -158,7 +158,7 @@ def index(df, region):
         .drop(list(map(lambda x: x + '_normed', index_vars)), 1)
 
 
-def _indicators_create(df, region):
+def _indicators_create(df, geo_level):
     return df \
         .rename(columns={'avg_speed_annual': 'velocity'}) \
         .assign(
@@ -166,17 +166,17 @@ def _indicators_create(df, region):
             bf_per_capita=lambda x: x['bf'] / x['population'] * 100,
             newness=lambda x: x['bf_march_shift'] / x['firms'],
         ) \
-        .pipe(index, region) \
+        .pipe(index, geo_level) \
         [[
             'fips', 'time', 'actualization', 'bf_per_capita', 'velocity', 
             'newness', 'index'
         ]]
 
 
-def _fips_formatter(df, region):
-    if region == 'us':
+def _fips_formatter(df, geo_level):
+    if geo_level == 'us':
         return df.assign(fips='00')
-    elif region == 'state':
+    elif geo_level == 'state':
         return df.assign(
                 fips=lambda x: x['fips'] \
                     .apply(lambda row: row if len(row) == 2 else '0' + row)
@@ -191,9 +191,9 @@ def _fips_formatter(df, region):
             )
 
 
-def _final_data_transform(df, region):
+def _final_data_transform(df, geo_level):
     return df \
-        .pipe(_fips_formatter, region) \
+        .pipe(_fips_formatter, geo_level) \
         .assign(
             category='Total',
             type='Total'
@@ -209,10 +209,10 @@ def _final_data_transform(df, region):
         .query('2005 <= year')
 
 
-def _create_neb_data(region):
-    return _raw_data_merge(region) \
-            .pipe(_indicators_create, region) \
-            .pipe(_final_data_transform, region)
+def _create_neb_data(geo_level):
+    return _raw_data_merge(geo_level) \
+            .pipe(_indicators_create, geo_level) \
+            .pipe(_final_data_transform, geo_level)
 
 
 def _download_csv_save(df, aws_filepath):
@@ -281,7 +281,7 @@ def neb_data_create_all(raw_data_fetch, raw_data_remove, aws_filepath=None):
 
     pd.concat(
         [
-            _create_neb_data(region) for region in ['state', 'us']
+            _create_neb_data(geo_level) for geo_level in ['state', 'us']
         ]
     ) \
         .pipe(_download_csv_save, aws_filepath) \
